@@ -14,20 +14,29 @@ interface MoveHistoryProps {
 
 export function MoveHistory({ moves, viewingMoveIndex, onMoveClick, onReturnToPresent, isViewingHistory }: MoveHistoryProps) {
   const entries: MoveHistoryEntry[] = getMoveHistoryEntries(moves)
+  const listRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLSpanElement>(null)
 
-  // Auto-scroll to bottom when not viewing history
+  // Auto-scroll to bottom within the list container (no page scroll)
   useEffect(() => {
-    if (!isViewingHistory && bottomRef.current?.scrollIntoView) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (!isViewingHistory && listRef.current && bottomRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [moves.length, isViewingHistory])
 
-  // Scroll active move into view when navigating history
+  // Scroll active move into view within the list container
   useEffect(() => {
-    if (isViewingHistory && activeRef.current?.scrollIntoView) {
-      activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    if (isViewingHistory && listRef.current && activeRef.current) {
+      const list = listRef.current
+      const active = activeRef.current
+      const listTop = list.scrollTop
+      const listBottom = listTop + list.clientHeight
+      const activeTop = active.offsetTop
+      const activeBottom = activeTop + active.offsetHeight
+      if (activeTop < listTop || activeBottom > listBottom) {
+        list.scrollTop = activeTop - list.clientHeight / 2
+      }
     }
   }, [viewingMoveIndex, isViewingHistory])
 
@@ -41,7 +50,7 @@ export function MoveHistory({ moves, viewingMoveIndex, onMoveClick, onReturnToPr
           </button>
         )}
       </div>
-      <div className={styles.list} role="list">
+      <div className={styles.list} role="list" ref={listRef}>
         {entries.length === 0 ? (
           <div className={styles.empty}>No moves yet</div>
         ) : (
