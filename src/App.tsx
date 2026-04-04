@@ -101,9 +101,20 @@ function App() {
 
   const moveStats = calcMoveStats(state.moveHistory)
 
+  const [showGameOverModal, setShowGameOverModal] = useState(true)
+
+  // Re-show modal whenever a new game ends
+  useEffect(() => {
+    const curr = state.phase
+    if (curr === 'checkmate' || curr === 'stalemate' || curr === 'draw') {
+      setShowGameOverModal(true)
+    }
+  }, [state.phase])
+
   const handleNewGame = useCallback(() => {
     reset()
     resetTimer()
+    setShowGameOverModal(false)
   }, [reset, resetTimer])
 
   const handleModeChange = useCallback((mode: GameMode) => {
@@ -237,11 +248,11 @@ function App() {
       )}
 
       <GameOverModal
-        phase={state.phase}
+        phase={showGameOverModal ? state.phase : 'playing'}
         winner={state.winner}
         onNewGame={handleNewGame}
         onReview={() => {
-          // Jump to first move to start review
+          setShowGameOverModal(false)
           if (state.moveHistory.length > 0) viewMoveAt(0)
         }}
       />
